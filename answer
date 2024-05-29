@@ -1,0 +1,112 @@
+1.1 
+function sortUserName(user) {
+  const compareFunction = (a, b, key) => {
+    if(key.length > 0){
+      console.log(key[0])
+      if(a[key[0]] < b[key[0]]){
+      return -1
+      }
+      if (a[key[0]] > b[key[0]]){
+        return 1
+      }
+      key.shift()
+      return compareFunction(a, b, key)
+    }else{
+      return 0
+    }
+  }
+  user.sort((a, b) => compareFunction(a, b, ["firstName", "lastName", "customerID"]))
+  console.log(user)
+}
+
+1.2
+function sortByType(user) {
+  // systemAnalytics > engineer > productOwner > freelancer > student
+ //由於js沒有enum，故用物件凍結來模擬
+  const SortEnum = Object.freeze({
+    "systemAnalytics": 0,
+    "engineer": 1,
+    "productOwner": 2,
+    "freelancer": 3,
+    "student": 4
+  })
+  user.sort((a, b) => {
+    if(SortEnum[a.profession] < SortEnum[b.profession]){
+      return -1
+    }
+    if(SortEnum[a.profession] > SortEnum[b.profession]){
+      return 1
+    }
+    return 0
+  })
+  
+  console.log(user)
+}
+
+2.1
+綠色與藍色有衝突，所以會用權重做比較，規則是：ID選擇器 > 類別選擇器(偽類) > 元素選擇器(偽元素)
+
+綠色css為 類別選擇器(b) 類別選擇器(b) 元素選擇器(c) 類別選擇器(b)，權重是(0, 3, 1)。
+藍色css為 類別選擇器(b) 類別選擇器(b) 類別選擇器(b)，權重是(0, 3, 0)。
+權重比較(a, b, c)只要a有值不管b,c 有多少都還是會被覆蓋，舉例(1, 0, 0) > (0, 2, 3)。所以現在是綠色(0, 3, 1) > 藍色(0, 3, 0)，才導致藍色不出現。
+
+如果要修正只有1st list為藍色，只要修改成
+
+.container .shop-list:first-child .item {
+   color: blue;
+}
+
+就可以了，css選擇器是從右至左的，在.shop-list:first-child時2st list就不會被選取
+
+2.2
+.container .shop-list li.item:nth-child(even){
+  background-color: red
+}
+
+3.
+function getUniqueNumber (items) {
+  console.log([...new Set(items)])
+}
+
+4.
+Interface是用來描述物件內的型別 enum是用來定義固定的鍵值對
+通常不為固定的鍵值對，只能描述其物件型別時，就會使用interface，資料如果是特定的固定值，要轉換為特定的對應值的話就會使用enum來轉換和控管。
+
+5.
+問題點應該是handleAddCount修改了三次count但結果只+1而已，這是因為React會將多個setState合併，如果傳入的是object則會被合併為一次(類似Object.assign)，應該將handleAddCount調整成
+
+ handleAddCount(){
+    this.setState((prev) => ({count: prev.count + 1}))
+    this.setState((prev) => ({count: prev.count + 1}))
+    this.setState((prev) => ({count: prev.count + 1}))
+  }
+
+6.
+新增debounce函數，在componentDidMount掛載新的方法debouncedHandleOnChange，其內容為呼叫debounce函數並handleOnChange傳入，之後修改input onChange操作函數為debouncedHandleOnChange，將整體會修改成如下
+
+var SearchBox = React.createClass({ 
+
+	debounce: function(func, delay){
+		let timer;
+		return (…args) => {
+			const context = this;
+			if(timer) clearTimeout(timer);
+			timer = setTimeout(() => {
+				timer = null;
+				func.apply(context, args);
+			}, delay);
+		};
+	},
+
+	componentDidMount: function() {
+		this.debouncedHandleOnChange = this.debounce(this.handleOnChange, 500);
+	},
+
+	render: function() { 
+		return <input type="search" name="p" onChange={this.debouncedHandleOnChange} />; 
+	}, 
+
+	handleOnChange: function(event) {
+	 // make ajax call 
+	}
+}); 
